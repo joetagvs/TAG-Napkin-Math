@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="TAG Napkin Math" />
+  <meta name="theme-color" content="#f4f1eb" />
+  <title>TAG Napkin Math</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --ink: #0d1b2a;
+      --paper: #f4f1eb;
+      --ruled: #ddd8cc;
+      --red: #c0392b;
+      --faint: #ece9e1;
+      --pencil: #7a7265;
+      --green: #1e6e3a;
+      --tag-blue: #1a3c6e;
+    }
+    html, body { background: #e8e4dc; font-family: 'Caveat', cursive; }
+    .page {
+      max-width: 430px;
+      margin: 0 auto;
+      padding: 0 0 120px;
+      min-height: 100vh;
+      background: var(--paper);
+      background-image: repeating-linear-gradient(transparent, transparent 31px, var(--ruled) 31px, var(--ruled) 32px);
+      position: relative;
+      box-shadow: 0 0 40px rgba(0,0,0,0.18);
+    }
+    .margin-line {
+      position: fixed;
+      left: calc(50% - 215px + 52px);
+      top: 0; bottom: 0;
+      width: 1.5px;
+      background: rgba(192,57,43,0.2);
+      pointer-events: none;
+      z-index: 10;
+    }
+    @media (max-width: 430px) { .margin-line { left: 52px; } }
+
+    /* HEADER */
+    .header {
+      padding: 24px 20px 16px 64px;
+      border-bottom: 2px solid var(--ruled);
+      display: flex; align-items: flex-end; justify-content: space-between;
+    }
+    .brand-tag { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--tag-blue); letter-spacing: 4px; }
+    .brand-sub { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; color: var(--pencil); text-transform: uppercase; }
+    .title { font-family: 'Caveat', cursive; font-size: 26px; font-weight: 700; color: var(--ink); text-align: right; line-height: 1.1; }
+
+    /* SECTIONS */
+    .section { padding: 16px 20px 4px 64px; }
+    .label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--pencil); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+    .label-opt { color: var(--pencil); font-style: italic; text-transform: none; letter-spacing: 0; }
+
+    /* QTY CONTROLS */
+    .qty-row { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+    .qty-wrap { display: flex; align-items: center; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; background: white; }
+    .qty-btn {
+      background: var(--faint); border: none; font-family: 'Caveat', cursive; font-size: 28px; color: var(--ink);
+      width: 44px; height: 44px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s; flex-shrink: 0; user-select: none;
+    }
+    .qty-btn:active { background: var(--ruled); }
+    .qty-input {
+      font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--ink);
+      width: 100px; text-align: center; border: none; outline: none; background: white; padding: 8px 4px;
+      -moz-appearance: textfield;
+    }
+    .qty-input::-webkit-outer-spin-button, .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .tier-badge {
+      margin-left: 12px; font-family: 'Caveat', cursive; font-size: 15px; color: white;
+      background: var(--tag-blue); border-radius: 20px; padding: 3px 12px; white-space: nowrap;
+    }
+
+    /* TIER TABLE */
+    .tier-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 12px; }
+    .tier-table th { text-align: left; color: var(--pencil); font-weight: 400; padding: 3px 4px 3px 0; border-bottom: 1px solid var(--ruled); font-size: 10px; letter-spacing: 0.5px; }
+    .tier-table th:last-child { text-align: right; }
+    .tier-table td { padding: 4px 4px 4px 0; color: var(--pencil); border-bottom: 1px dashed var(--ruled); vertical-align: middle; }
+    .tier-table td:last-child { text-align: right; }
+    .tier-table tr.active-tier td { color: var(--ink); font-weight: 500; }
+    .tier-table tr.active-tier td:first-child { position: relative; }
+    .tier-table tr.active-tier td:first-child::before { content: '▶'; position: absolute; left: -14px; color: var(--red); font-size: 9px; top: 6px; }
+    .tier-table tr.used-tier td { color: var(--ink); }
+    .tier-amt { color: var(--green) !important; font-weight: 500 !important; }
+
+    /* DIVIDER */
+    .divider { border: none; border-top: 1.5px dashed var(--ruled); margin: 16px 0 0 64px; }
+
+    /* QUOTE BOX */
+    .quote-wrap { padding: 14px 20px 0 64px; }
+    .quote-box { background: white; border: 2px solid var(--ink); border-radius: 4px; box-shadow: 4px 4px 0 var(--ink); padding: 16px; position: relative; }
+    .quote-box::before {
+      content: 'QUOTE ESTIMATE'; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px;
+      color: var(--pencil); position: absolute; top: -9px; left: 14px; background: white; padding: 0 4px;
+    }
+    .breakdown-row {
+      display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0;
+      border-bottom: 1px solid var(--faint); font-family: 'Caveat', cursive; font-size: 15px; color: var(--pencil); gap: 8px;
+    }
+    .breakdown-row .mono { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--ink); white-space: nowrap; }
+    .total-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; padding-top: 12px; border-top: 2.5px solid var(--ink); }
+    .total-label { font-family: 'Caveat', cursive; font-size: 30px; font-weight: 700; color: var(--ink); }
+    .total-amt { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; color: var(--red); }
+    .eff-rate { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--pencil); margin-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .savings-pill { background: #e8f5ec; color: var(--green); border-radius: 12px; padding: 2px 10px; font-size: 11px; font-family: 'DM Mono', monospace; }
+
+    /* PCT CONTROLS */
+    .pct-row { display: flex; align-items: center; gap: 10px; }
+    .pct-wrap { display: flex; align-items: center; border: 1.5px solid var(--ruled); border-radius: 6px; overflow: hidden; background: white; width: fit-content; }
+    .pct-wrap.active { border-color: var(--ink); border-width: 2px; }
+    .pct-input { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; color: var(--ink); width: 62px; text-align: center; border: none; outline: none; background: transparent; padding: 7px 4px; -moz-appearance: textfield; }
+    .pct-input::-webkit-outer-spin-button, .pct-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .pct-suffix { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--pencil); padding: 7px 10px 7px 0; pointer-events: none; }
+    .pct-result { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; color: var(--tag-blue); }
+    .pct-modified { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1px; color: var(--red); border: 1px dashed var(--red); border-radius: 20px; padding: 2px 8px; }
+
+    /* OVERRIDE */
+    .override-wrap { display: flex; align-items: center; border: 2px dashed var(--red); border-radius: 6px; overflow: hidden; background: #fff8f7; width: fit-content; }
+    .override-wrap.empty { border-color: var(--ruled); background: white; border-style: solid; border-width: 1.5px; }
+    .override-prefix { font-family: 'DM Mono', monospace; font-size: 18px; color: var(--pencil); padding: 8px 4px 8px 12px; background: transparent; border: none; pointer-events: none; line-height: 1; }
+    .override-input { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; color: var(--red); width: 90px; border: none; outline: none; background: transparent; padding: 8px 12px 8px 2px; -moz-appearance: textfield; }
+    .override-input.empty { color: var(--pencil); }
+    .override-input::-webkit-outer-spin-button, .override-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .override-clear { background: transparent; border: none; border-left: 1px solid var(--ruled); font-family: 'Caveat', cursive; font-size: 18px; color: var(--pencil); padding: 6px 10px; cursor: pointer; line-height: 1; }
+    .override-badge { margin-left: 10px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--red); border: 1.5px dashed var(--red); border-radius: 20px; padding: 3px 10px; white-space: nowrap; letter-spacing: 0.5px; }
+
+    /* PROSERV */
+    .proserv-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+    .proserv-col { display: flex; flex-direction: column; gap: 3px; }
+    .sub-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--pencil); letter-spacing: 1px; text-transform: uppercase; }
+
+    /* NOTES */
+    .notes-wrap { padding: 14px 20px 0 64px; }
+    .note { font-family: 'Caveat', cursive; font-size: 14px; color: var(--pencil); font-style: italic; line-height: 1.8; }
+
+    /* RESET */
+    .reset-btn { display: block; margin: 20px auto 0; background: transparent; border: 1.5px solid var(--pencil); border-radius: 20px; font-family: 'Caveat', cursive; font-size: 17px; color: var(--pencil); padding: 7px 28px; cursor: pointer; }
+    .reset-btn:active { background: var(--faint); }
+
+    .hint { font-family: 'Caveat', cursive; font-size: 13px; color: var(--pencil); font-style: italic; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="margin-line"></div>
+  <div class="page" id="app"></div>
+
+  <script>
+    // ── DATA ──────────────────────────────────────────────────────────────────
+    const TIERS = [
+      { from: 1,     to: 40,       unitPrice: 873,  discount: 0.0  },
+      { from: 41,    to: 100,      unitPrice: 728,  discount: 16.7 },
+      { from: 101,   to: 150,      unitPrice: 582,  discount: 33.3 },
+      { from: 151,   to: 200,      unitPrice: 509,  discount: 41.7 },
+      { from: 201,   to: 300,      unitPrice: 437,  discount: 50.0 },
+      { from: 301,   to: 400,      unitPrice: 364,  discount: 58.3 },
+      { from: 401,   to: 500,      unitPrice: 340,  discount: 61.1 },
+      { from: 501,   to: 15000,    unitPrice: 291,  discount: 66.7 },
+      { from: 15001, to: Infinity, unitPrice: 262,  discount: 70.0 },
+    ];
+
+    // ── STATE ─────────────────────────────────────────────────────────────────
+    let state = {
+      existing: '', qty: '30', overrideRaw: '',
+      subPct: '20', mcsPct: '5',
+      proServDays: '', proServRate: '',
+    };
+
+    // ── HELPERS ───────────────────────────────────────────────────────────────
+    function fmtD(n)   { return '$' + Math.round(n).toLocaleString(); }
+    function fmtDec(n) { return '$' + n.toFixed(2); }
+    function fmtN(n)   { return n === Infinity ? '∞' : n.toLocaleString(); }
+
+    function calcQuote(newQty, existingQty, overridePrice) {
+      if (!newQty || newQty < 1) return { total: 0, breakdown: [], effRate: 0, savings: 0, overridden: false };
+      if (overridePrice !== null && overridePrice > 0) {
+        const total = newQty * overridePrice;
+        const tieredTotal = calcQuote(newQty, existingQty, null).total;
+        return { total, breakdown: [{ tier: -1, from: existingQty + 1, to: existingQty + newQty, count: newQty, unitPrice: overridePrice, subtotal: total }], effRate: overridePrice, savings: tieredTotal - total, overridden: true };
+      }
+      const start = existingQty + 1, end = existingQty + newQty;
+      let total = 0, breakdown = [];
+      for (let i = 0; i < TIERS.length; i++) {
+        const t = TIERS[i];
+        const bandStart = Math.max(t.from, start);
+        const bandEnd   = t.to === Infinity ? end : Math.min(t.to, end);
+        if (bandStart > bandEnd) continue;
+        const count = bandEnd - bandStart + 1;
+        const subtotal = count * t.unitPrice;
+        total += subtotal;
+        breakdown.push({ tier: i, from: bandStart, to: bandEnd, count, unitPrice: t.unitPrice, subtotal });
+      }
+      return { total, breakdown, effRate: newQty > 0 ? total / newQty : 0, savings: newQty * 873 - total, overridden: false };
+    }
+
+    function activeTierIdx(qty) {
+      if (!qty || qty < 1) return 0;
+      for (let i = TIERS.length - 1; i >= 0; i--) { if (qty >= TIERS[i].from) return i; }
+      return 0;
+    }
+
+    // ── RENDER ────────────────────────────────────────────────────────────────
+    function render() {
+      const s = state;
+      const safeExisting    = Math.max(0, parseInt(s.existing) || 0);
+      const safeQty         = Math.max(0, parseInt(s.qty) || 0);
+      const overridePrice   = s.overrideRaw !== '' && parseFloat(s.overrideRaw) > 0 ? parseFloat(s.overrideRaw) : null;
+      const totalPool       = safeExisting + safeQty;
+      const { total, breakdown, effRate, savings, overridden } = calcQuote(safeQty, safeExisting, overridePrice);
+      const activeIdx       = safeQty > 0 ? activeTierIdx(totalPool) : activeTierIdx(safeExisting);
+      const isExpansion     = safeExisting > 0;
+      const safeSubPct      = Math.max(0, parseFloat(s.subPct) || 0);
+      const safeMcsPct      = Math.max(0, parseFloat(s.mcsPct) || 0);
+      const subAmt          = total * (safeSubPct / 100);
+      const mcsAmt          = total * (safeMcsPct / 100);
+      const safeProServDays = Math.max(0, parseInt(s.proServDays) || 0);
+      const safeProServRate = Math.max(0, parseFloat(s.proServRate) || 0);
+      const proServAmt      = safeProServDays * safeProServRate;
+      const grandTotal      = total + subAmt + mcsAmt + proServAmt;
+
+      // Tier table rows
+      const tierRows = TIERS.map((t, i) => {
+        const isActive    = i === activeIdx && safeQty > 0;
+        const bRow        = breakdown.find(b => b.tier === i);
+        const isUsed      = !!bRow;
+        const fullyPassed = safeExisting > 0 && t.to !== Infinity && t.to <= safeExisting;
+        const cls         = isActive ? 'active-tier' : isUsed ? 'used-tier' : '';
+        const amtCell     = safeQty > 0 ? `<td class="${isUsed ? 'tier-amt' : ''}">${isUsed ? fmtD(bRow.subtotal) : '—'}</td>` : '';
+        return `<tr class="${cls}" style="opacity:${fullyPassed ? 0.35 : 1}">
+          <td>${fmtN(t.from)}</td><td>${fmtN(t.to)}</td><td>$${t.unitPrice}</td><td>${t.discount}%</td>${amtCell}
+        </tr>`;
+      }).join('');
+
+      // Quote breakdown rows
+      const breakdownRows = breakdown.map(b => `
+        <div class="breakdown-row">
+          <span>${overridden ? `${safeQty.toLocaleString()} ZFLs × $${overridePrice}/ZFL` : `#${fmtN(b.from)}–${fmtN(b.to)} (${b.count.toLocaleString()} × $${b.unitPrice})`}</span>
+          <span class="mono">${fmtD(b.subtotal)}</span>
+        </div>`).join('');
+
+      const proServQuoteLine = proServAmt > 0 ? `
+        <div class="breakdown-row" style="border-bottom:none">
+          <span>ProServ (${safeProServDays}d × ${fmtD(safeProServRate)})</span>
+          <span class="mono">${fmtD(proServAmt)}</span>
+        </div>` : '';
+
+      document.getElementById('app').innerHTML = `
+        <!-- HEADER -->
+        <div class="header">
+          <div>
+            <div class="brand-tag">TAG</div>
+            <div class="brand-sub">Video Systems</div>
+          </div>
+          <div class="title">TAG Napkin<br/>Math</div>
+        </div>
+
+        <!-- EXISTING ZFLs -->
+        <div class="section" style="padding-top:20px">
+          <div class="label">Existing ZFL pool <span class="label-opt">— optional</span></div>
+          <div class="qty-row">
+            <div class="qty-wrap" style="border-color:${isExpansion ? 'var(--tag-blue)' : 'var(--ruled)'};border-width:${isExpansion ? 2 : 1.5}px">
+              <button class="qty-btn" onclick="nudge('existing',-1)" style="${isExpansion ? 'background:#eef2f8' : ''}">−</button>
+              <input class="qty-input" type="number" inputmode="numeric" placeholder="0" value="${s.existing}"
+                oninput="update('existing',this.value.replace(/[^0-9]/g,''))"
+                style="color:${isExpansion ? 'var(--tag-blue)' : 'var(--pencil)'}" />
+              <button class="qty-btn" onclick="nudge('existing',1)" style="${isExpansion ? 'background:#eef2f8' : ''}">+</button>
+            </div>
+            ${isExpansion ? `<div class="tier-badge" style="background:var(--pencil);font-size:13px">expansion</div>` : ''}
+          </div>
+        </div>
+
+        <!-- NEW ZFLs -->
+        <div class="section" style="padding-top:14px">
+          <div class="label">New ZFLs to license</div>
+          <div class="qty-row">
+            <div class="qty-wrap">
+              <button class="qty-btn" onclick="nudge('qty',-1)">−</button>
+              <input class="qty-input" type="number" inputmode="numeric" value="${s.qty}"
+                oninput="update('qty',this.value.replace(/[^0-9]/g,''))" min="1" />
+              <button class="qty-btn" onclick="nudge('qty',1)">+</button>
+            </div>
+            ${safeQty > 0 && !overridden ? `<div class="tier-badge">${isExpansion ? `pool: ${totalPool.toLocaleString()} → T${activeIdx+1}` : `Tier ${activeIdx+1} · ${TIERS[activeIdx].discount}% off`}</div>` : ''}
+            ${overridden ? `<div class="tier-badge" style="background:var(--red)">override</div>` : ''}
+          </div>
+          ${isExpansion && safeQty > 0 ? `<div class="hint">↳ Existing ${safeExisting.toLocaleString()} + ${safeQty.toLocaleString()} new = ${totalPool.toLocaleString()} ZFLs total</div>` : ''}
+        </div>
+
+        <!-- PRICE OVERRIDE -->
+        <div class="section" style="padding-top:14px">
+          <div class="label">Override price / ZFL <span class="label-opt">— optional</span></div>
+          <div class="qty-row">
+            <div class="override-wrap ${s.overrideRaw === '' ? 'empty' : ''}">
+              <span class="override-prefix">$</span>
+              <input class="override-input ${s.overrideRaw === '' ? 'empty' : ''}" type="number" inputmode="decimal"
+                placeholder="auto" value="${s.overrideRaw}"
+                oninput="update('overrideRaw',this.value.replace(/[^0-9.]/g,''))" />
+              ${s.overrideRaw !== '' ? `<button class="override-clear" onclick="update('overrideRaw','')">✕</button>` : ''}
+            </div>
+            ${overridePrice !== null ? `<div class="override-badge">MANUAL RATE</div>` : ''}
+          </div>
+          ${overridePrice !== null && savings !== 0 && safeQty > 0 ? `
+            <div class="hint" style="color:${savings > 0 ? 'var(--green)' : 'var(--red)'}">
+              ${savings > 0 ? `↳ ${fmtD(savings)} below tiered rate` : `↳ ${fmtD(Math.abs(savings))} above tiered rate`}
+            </div>` : ''}
+        </div>
+
+        <!-- YEARLY SUBSCRIPTION -->
+        <div class="section" style="padding-top:14px">
+          <div class="label">Yearly subscription</div>
+          <div class="pct-row">
+            <div class="pct-wrap ${s.subPct !== '20' ? 'active' : ''}">
+              <input class="pct-input" type="number" inputmode="decimal" value="${s.subPct}"
+                oninput="update('subPct',this.value.replace(/[^0-9.]/g,''))" min="0" max="100" />
+              <span class="pct-suffix">%</span>
+            </div>
+            ${safeQty > 0 && total > 0 ? `<span class="pct-result">${fmtD(subAmt)}/yr</span>` : ''}
+            ${s.subPct !== '20' ? `<span class="pct-modified">MODIFIED</span>` : ''}
+          </div>
+          ${safeQty > 0 && total > 0 ? `<div class="hint">${fmtD(total)} × ${safeSubPct}% = ${fmtD(subAmt)} per year</div>` : ''}
+        </div>
+
+        <!-- YEARLY MCS -->
+        <div class="section" style="padding-top:14px">
+          <div class="label">Yearly MCS</div>
+          <div class="pct-row">
+            <div class="pct-wrap ${s.mcsPct !== '5' ? 'active' : ''}">
+              <input class="pct-input" type="number" inputmode="decimal" value="${s.mcsPct}"
+                oninput="update('mcsPct',this.value.replace(/[^0-9.]/g,''))" min="0" max="100" />
+              <span class="pct-suffix">%</span>
+            </div>
+            ${safeQty > 0 && total > 0 ? `<span class="pct-result">${fmtD(mcsAmt)}/yr</span>` : ''}
+            ${s.mcsPct !== '5' ? `<span class="pct-modified">MODIFIED</span>` : ''}
+          </div>
+          ${safeQty > 0 && total > 0 ? `<div class="hint">${fmtD(total)} × ${safeMcsPct}% = ${fmtD(mcsAmt)} per year</div>` : ''}
+        </div>
+
+        <!-- PROSERV -->
+        <div class="section" style="padding-top:14px">
+          <div class="label">ProServ <span class="label-opt">— optional</span></div>
+          <div class="proserv-row">
+            <div class="proserv-col">
+              <div class="sub-label">Days</div>
+              <div class="qty-wrap" style="border-color:${safeProServDays > 0 ? 'var(--ink)' : 'var(--ruled)'};border-width:${safeProServDays > 0 ? 2 : 1.5}px">
+                <button class="qty-btn" style="width:36px;height:38px;font-size:22px" onclick="nudgeProServDays(-1)">−</button>
+                <input class="qty-input" type="number" inputmode="numeric" placeholder="0" value="${s.proServDays}"
+                  oninput="update('proServDays',this.value.replace(/[^0-9]/g,''))"
+                  style="width:60px;font-size:18px;color:${safeProServDays > 0 ? 'var(--ink)' : 'var(--pencil)'}" />
+                <button class="qty-btn" style="width:36px;height:38px;font-size:22px" onclick="nudgeProServDays(1)">+</button>
+              </div>
+            </div>
+            <div class="proserv-col">
+              <div class="sub-label">Rate / day</div>
+              <div class="override-wrap ${safeProServRate === 0 ? 'empty' : ''}"
+                   style="border-style:solid;border-color:${safeProServRate > 0 ? 'var(--ink)' : 'var(--ruled)'};border-width:${safeProServRate > 0 ? 2 : 1.5}px">
+                <span class="override-prefix">$</span>
+                <input class="override-input ${safeProServRate === 0 ? 'empty' : ''}" type="number" inputmode="decimal"
+                  placeholder="0" value="${s.proServRate}"
+                  oninput="update('proServRate',this.value.replace(/[^0-9.]/g,''))"
+                  style="color:${safeProServRate > 0 ? 'var(--ink)' : 'var(--pencil)'};width:80px" />
+              </div>
+            </div>
+            ${proServAmt > 0 ? `<div style="display:flex;align-items:flex-end;padding-bottom:6px"><span class="pct-result">${fmtD(proServAmt)}</span></div>` : ''}
+          </div>
+          ${proServAmt > 0 ? `<div class="hint">${safeProServDays} day${safeProServDays !== 1 ? 's' : ''} × ${fmtD(safeProServRate)}/day = ${fmtD(proServAmt)}</div>` : ''}
+        </div>
+
+        <!-- TIER TABLE -->
+        ${!overridden ? `
+        <div class="section" style="padding-top:14px">
+          <div class="label">Volume tier schedule</div>
+          <table class="tier-table">
+            <thead><tr><th>From</th><th>To</th><th>$/ZFL</th><th>Disc.</th>${safeQty > 0 ? '<th>Amount</th>' : ''}</tr></thead>
+            <tbody>${tierRows}</tbody>
+          </table>
+        </div>` : ''}
+
+        <hr class="divider" />
+
+        <!-- QUOTE -->
+        ${safeQty > 0 ? `
+        <div class="quote-wrap">
+          <div class="quote-box">
+            ${breakdownRows}
+            <div class="breakdown-row" style="border-top:1px solid var(--ruled);margin-top:4px;padding-top:8px;color:var(--ink);font-weight:600">
+              <span>ZFL licenses</span><span class="mono">${fmtD(total)}</span>
+            </div>
+            <div class="breakdown-row">
+              <span>Yearly subscription (${safeSubPct}%)</span><span class="mono">${fmtD(subAmt)}</span>
+            </div>
+            <div class="breakdown-row" style="border-bottom:${proServAmt > 0 ? '1px solid var(--faint)' : 'none'}">
+              <span>Yearly MCS (${safeMcsPct}%)</span><span class="mono">${fmtD(mcsAmt)}</span>
+            </div>
+            ${proServQuoteLine}
+            <div class="total-row">
+              <span class="total-label">Grand Total</span>
+              <span class="total-amt">${fmtD(grandTotal)}</span>
+            </div>
+            <div class="eff-rate">
+              <span>ZFLs: ${fmtDec(effRate)}/ZFL</span>
+              ${!overridden && savings > 0 ? `<span class="savings-pill">save ${fmtD(savings)}</span>` : ''}
+            </div>
+          </div>
+        </div>` : ''}
+
+        <!-- NOTES -->
+        <div class="notes-wrap" style="margin-top:16px">
+          <div class="note">
+            ↳ Blended: each tier rate applies to ZFLs within that band only.<br/>
+            ↳ Subscription &amp; MCS calculated on ZFL license cost.<br/>
+            ↳ Dev &amp; commissioning costs quoted separately.
+          </div>
+        </div>
+
+        <button class="reset-btn" onclick="resetAll()">↺ reset</button>
+      `;
+    }
+
+    // ── ACTIONS ───────────────────────────────────────────────────────────────
+    function update(key, val) {
+      state[key] = val;
+      render();
+    }
+
+    function nudge(key, delta) {
+      const min = key === 'existing' ? 0 : 1;
+      const cur = parseInt(state[key]) || 0;
+      state[key] = String(Math.max(min, Math.min(99999, cur + delta)));
+      render();
+    }
+
+    function nudgeProServDays(delta) {
+      const cur = parseInt(state.proServDays) || 0;
+      state.proServDays = String(Math.max(0, cur + delta));
+      render();
+    }
+
+    function resetAll() {
+      state = { existing: '', qty: '30', overrideRaw: '', subPct: '20', mcsPct: '5', proServDays: '', proServRate: '' };
+      render();
+    }
+
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    render();
+  </script>
+</body>
+</html>
