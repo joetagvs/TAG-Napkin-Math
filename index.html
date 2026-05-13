@@ -159,7 +159,26 @@
     .notes-wrap { padding: 14px 20px 0 64px; }
     .note { font-family: 'Caveat', cursive; font-size: 14px; color: var(--pencil); font-style: italic; line-height: 1.8; }
 
-    /* RESET */
+    /* CHANNEL TOGGLE */
+    .channel-toggle { display: flex; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; width: fit-content; }
+    .channel-btn { font-family: 'Caveat', cursive; font-size: 18px; padding: 7px 22px; border: none; background: transparent; color: var(--pencil); cursor: pointer; transition: all 0.12s; }
+    .channel-btn.active { background: var(--ink); color: var(--paper); }
+
+    /* MARGIN TABLE */
+    .margin-box { margin-top: 10px; background: #fffdf7; border: 1.5px solid var(--ruled); border-radius: 6px; padding: 12px 14px; }
+    .margin-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed var(--ruled); gap: 8px; }
+    .margin-row:last-child { border-bottom: none; }
+    .margin-label { font-family: 'Caveat', cursive; font-size: 16px; color: var(--ink); flex: 1; }
+    .margin-input-wrap { display: flex; align-items: center; border: 1.5px solid var(--ruled); border-radius: 6px; overflow: hidden; background: white; }
+    .margin-input { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; color: var(--ink); width: 52px; text-align: center; border: none; outline: none; background: transparent; padding: 5px 2px; -moz-appearance: textfield; }
+    .margin-input::-webkit-outer-spin-button, .margin-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .margin-pct { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--pencil); padding: 5px 8px 5px 0; }
+    .margin-result { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--green); font-weight: 500; min-width: 70px; text-align: right; }
+
+    /* MARGIN SUMMARY in quote */
+    .margin-summary { margin-top: 10px; padding-top: 10px; border-top: 1.5px dashed var(--ruled); }
+    .margin-summary-row { display: flex; justify-content: space-between; font-family: 'Caveat', cursive; font-size: 14px; color: var(--pencil); padding: 2px 0; }
+    .margin-summary-row .mono { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--green); }
     .reset-btn { display: block; margin: 20px auto 0; background: transparent; border: 1.5px solid var(--pencil); border-radius: 20px; font-family: 'Caveat', cursive; font-size: 17px; color: var(--pencil); padding: 7px 28px; cursor: pointer; }
     .reset-btn:active { background: var(--faint); }
 
@@ -189,6 +208,10 @@
       existing: '', qty: '30', overrideRaw: '',
       subPct: '20', mcsPct: '5',
       proServDays: '', proServRate: '',
+      channel: 'direct',          // 'direct' or 'indirect'
+      marginZfl: '30',
+      marginSub: '25',
+      marginMcs: '10',
     };
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
@@ -243,6 +266,15 @@
       const proServAmt      = safeProServDays * safeProServRate;
       const grandTotal      = total + subAmt + mcsAmt + proServAmt;
 
+      const isIndirect      = s.channel === 'indirect';
+      const safeMarginZfl   = Math.max(0, Math.min(100, parseFloat(s.marginZfl) || 0));
+      const safeMarginSub   = Math.max(0, Math.min(100, parseFloat(s.marginSub) || 0));
+      const safeMarginMcs   = Math.max(0, Math.min(100, parseFloat(s.marginMcs) || 0));
+      const marginZflAmt    = isIndirect ? total   * (safeMarginZfl / 100) : 0;
+      const marginSubAmt    = isIndirect ? subAmt  * (safeMarginSub / 100) : 0;
+      const marginMcsAmt    = isIndirect ? mcsAmt  * (safeMarginMcs / 100) : 0;
+      const totalMargin     = marginZflAmt + marginSubAmt + marginMcsAmt;
+
       // Tier table rows
       const tierRows = TIERS.map((t, i) => {
         const isActive    = i === activeIdx && safeQty > 0;
@@ -277,6 +309,15 @@
             <div class="brand-sub">Video Systems</div>
           </div>
           <div class="title">TAG Napkin<br/>Math</div>
+        </div>
+
+        <!-- CHANNEL TOGGLE -->
+        <div class="section" style="padding-top:20px">
+          <div class="label">Channel</div>
+          <div class="channel-toggle">
+            <button class="channel-btn ${s.channel === 'direct' ? 'active' : ''}" onclick="update('channel','direct')">Direct</button>
+            <button class="channel-btn ${s.channel === 'indirect' ? 'active' : ''}" onclick="update('channel','indirect')">Indirect</button>
+          </div>
         </div>
 
         <!-- EXISTING ZFLs -->
@@ -359,6 +400,42 @@
           ${safeQty > 0 && total > 0 ? `<div class="hint">${fmtD(total)} × ${safeMcsPct}% = ${fmtD(mcsAmt)} per year</div>` : ''}
         </div>
 
+        <!-- INDIRECT MARGINS -->
+        ${isIndirect ? `
+        <div class="section" style="padding-top:14px">
+          <div class="label">Partner margins</div>
+          <div class="margin-box">
+            <div class="margin-row">
+              <span class="margin-label">ZFL</span>
+              <div class="margin-input-wrap">
+                <input class="margin-input" type="number" inputmode="decimal" value="${s.marginZfl}"
+                  onchange="commit('marginZfl',this.value.replace(/[^0-9.]/g,''))" min="0" max="100" />
+                <span class="margin-pct">%</span>
+              </div>
+              ${total > 0 ? `<span class="margin-result">${fmtD(marginZflAmt)}</span>` : '<span class="margin-result">—</span>'}
+            </div>
+            <div class="margin-row">
+              <span class="margin-label">Subscription</span>
+              <div class="margin-input-wrap">
+                <input class="margin-input" type="number" inputmode="decimal" value="${s.marginSub}"
+                  onchange="commit('marginSub',this.value.replace(/[^0-9.]/g,''))" min="0" max="100" />
+                <span class="margin-pct">%</span>
+              </div>
+              ${subAmt > 0 ? `<span class="margin-result">${fmtD(marginSubAmt)}</span>` : '<span class="margin-result">—</span>'}
+            </div>
+            <div class="margin-row">
+              <span class="margin-label">MCS</span>
+              <div class="margin-input-wrap">
+                <input class="margin-input" type="number" inputmode="decimal" value="${s.marginMcs}"
+                  onchange="commit('marginMcs',this.value.replace(/[^0-9.]/g,''))" min="0" max="100" />
+                <span class="margin-pct">%</span>
+              </div>
+              ${mcsAmt > 0 ? `<span class="margin-result">${fmtD(marginMcsAmt)}</span>` : '<span class="margin-result">—</span>'}
+            </div>
+          </div>
+          ${totalMargin > 0 ? `<div class="hint" style="color:var(--green)">↳ Total partner margin: ${fmtD(totalMargin)}</div>` : ''}
+        </div>` : ''}
+
         <!-- PROSERV -->
         <div class="section" style="padding-top:14px">
           <div class="label">ProServ <span class="label-opt">— optional</span></div>
@@ -424,6 +501,18 @@
               <span>ZFLs: ${fmtDec(effRate)}/ZFL</span>
               ${!overridden && savings > 0 ? `<span class="savings-pill">save ${fmtD(savings)}</span>` : ''}
             </div>
+            ${isIndirect && totalMargin > 0 ? `
+            <div class="margin-summary">
+              <div class="margin-summary-row" style="font-weight:600;color:var(--ink);margin-bottom:4px">
+                <span>Partner margin</span><span class="mono" style="color:var(--green)">${fmtD(totalMargin)}</span>
+              </div>
+              ${marginZflAmt > 0 ? `<div class="margin-summary-row"><span>ZFL (${safeMarginZfl}%)</span><span class="mono">${fmtD(marginZflAmt)}</span></div>` : ''}
+              ${marginSubAmt > 0 ? `<div class="margin-summary-row"><span>Subscription (${safeMarginSub}%)</span><span class="mono">${fmtD(marginSubAmt)}</span></div>` : ''}
+              ${marginMcsAmt > 0 ? `<div class="margin-summary-row"><span>MCS (${safeMarginMcs}%)</span><span class="mono">${fmtD(marginMcsAmt)}</span></div>` : ''}
+              <div class="margin-summary-row" style="font-weight:600;color:var(--ink);border-top:1px solid var(--ruled);margin-top:4px;padding-top:6px">
+                <span>Net to TAG</span><span class="mono" style="color:var(--tag-blue)">${fmtD(grandTotal - totalMargin)}</span>
+              </div>
+            </div>` : ''}
           </div>
         </div>` : ''}
 
@@ -466,7 +555,7 @@
     }
 
     function resetAll() {
-      state = { existing: '', qty: '30', overrideRaw: '', subPct: '20', mcsPct: '5', proServDays: '', proServRate: '' };
+      state = { existing: '', qty: '30', overrideRaw: '', subPct: '20', mcsPct: '5', proServDays: '', proServRate: '', channel: 'direct', marginZfl: '30', marginSub: '25', marginMcs: '10' };
       render();
     }
 
