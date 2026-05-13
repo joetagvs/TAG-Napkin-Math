@@ -13,6 +13,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+  <!-- Fallback fonts if Google Fonts unavailable (offline/home screen) -->
+  <style>
+    @font-face {
+      font-family: 'Caveat';
+      font-style: normal;
+      font-weight: 400 700;
+      src: local('Caveat'), url('https://fonts.gstatic.com/s/caveat/v17/WnznHAc5bAfYB2QRah7pcpNvOx-pjcB9eIWpZA.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'DM Mono';
+      font-style: normal;
+      font-weight: 400 500;
+      src: local('DM Mono'), url('https://fonts.gstatic.com/s/dmmono/v14/aFTR7PB1QTsUX8KYth-orYataIf4.woff2') format('woff2');
+    }
+  </style>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
@@ -271,7 +286,7 @@
             <div class="qty-wrap" style="border-color:${isExpansion ? 'var(--tag-blue)' : 'var(--ruled)'};border-width:${isExpansion ? 2 : 1.5}px">
               <button class="qty-btn" onclick="nudge('existing',-1)" style="${isExpansion ? 'background:#eef2f8' : ''}">−</button>
               <input class="qty-input" type="number" inputmode="numeric" placeholder="0" value="${s.existing}"
-                oninput="update('existing',this.value.replace(/[^0-9]/g,''))"
+                onchange="commit('existing',this.value.replace(/[^0-9]/g,''))"
                 style="color:${isExpansion ? 'var(--tag-blue)' : 'var(--pencil)'}" />
               <button class="qty-btn" onclick="nudge('existing',1)" style="${isExpansion ? 'background:#eef2f8' : ''}">+</button>
             </div>
@@ -286,7 +301,7 @@
             <div class="qty-wrap">
               <button class="qty-btn" onclick="nudge('qty',-1)">−</button>
               <input class="qty-input" type="number" inputmode="numeric" value="${s.qty}"
-                oninput="update('qty',this.value.replace(/[^0-9]/g,''))" min="1" />
+                onchange="commit('qty',this.value.replace(/[^0-9]/g,''))" min="1" />
               <button class="qty-btn" onclick="nudge('qty',1)">+</button>
             </div>
             ${safeQty > 0 && !overridden ? `<div class="tier-badge">${isExpansion ? `pool: ${totalPool.toLocaleString()} → T${activeIdx+1}` : `Tier ${activeIdx+1} · ${TIERS[activeIdx].discount}% off`}</div>` : ''}
@@ -303,7 +318,7 @@
               <span class="override-prefix">$</span>
               <input class="override-input ${s.overrideRaw === '' ? 'empty' : ''}" type="number" inputmode="decimal"
                 placeholder="auto" value="${s.overrideRaw}"
-                oninput="update('overrideRaw',this.value.replace(/[^0-9.]/g,''))" />
+                onchange="commit('overrideRaw',this.value.replace(/[^0-9.]/g,''))" />
               ${s.overrideRaw !== '' ? `<button class="override-clear" onclick="update('overrideRaw','')">✕</button>` : ''}
             </div>
             ${overridePrice !== null ? `<div class="override-badge">MANUAL RATE</div>` : ''}
@@ -320,7 +335,7 @@
           <div class="pct-row">
             <div class="pct-wrap ${s.subPct !== '20' ? 'active' : ''}">
               <input class="pct-input" type="number" inputmode="decimal" value="${s.subPct}"
-                oninput="update('subPct',this.value.replace(/[^0-9.]/g,''))" min="0" max="100" />
+                onchange="commit('subPct',this.value.replace(/[^0-9.]/g,''))" min="0" max="100" />
               <span class="pct-suffix">%</span>
             </div>
             ${safeQty > 0 && total > 0 ? `<span class="pct-result">${fmtD(subAmt)}/yr</span>` : ''}
@@ -335,7 +350,7 @@
           <div class="pct-row">
             <div class="pct-wrap ${s.mcsPct !== '5' ? 'active' : ''}">
               <input class="pct-input" type="number" inputmode="decimal" value="${s.mcsPct}"
-                oninput="update('mcsPct',this.value.replace(/[^0-9.]/g,''))" min="0" max="100" />
+                onchange="commit('mcsPct',this.value.replace(/[^0-9.]/g,''))" min="0" max="100" />
               <span class="pct-suffix">%</span>
             </div>
             ${safeQty > 0 && total > 0 ? `<span class="pct-result">${fmtD(mcsAmt)}/yr</span>` : ''}
@@ -353,7 +368,7 @@
               <div class="qty-wrap" style="border-color:${safeProServDays > 0 ? 'var(--ink)' : 'var(--ruled)'};border-width:${safeProServDays > 0 ? 2 : 1.5}px">
                 <button class="qty-btn" style="width:36px;height:38px;font-size:22px" onclick="nudgeProServDays(-1)">−</button>
                 <input class="qty-input" type="number" inputmode="numeric" placeholder="0" value="${s.proServDays}"
-                  oninput="update('proServDays',this.value.replace(/[^0-9]/g,''))"
+                  onchange="commit('proServDays',this.value.replace(/[^0-9]/g,''))"
                   style="width:60px;font-size:18px;color:${safeProServDays > 0 ? 'var(--ink)' : 'var(--pencil)'}" />
                 <button class="qty-btn" style="width:36px;height:38px;font-size:22px" onclick="nudgeProServDays(1)">+</button>
               </div>
@@ -365,7 +380,7 @@
                 <span class="override-prefix">$</span>
                 <input class="override-input ${safeProServRate === 0 ? 'empty' : ''}" type="number" inputmode="decimal"
                   placeholder="0" value="${s.proServRate}"
-                  oninput="update('proServRate',this.value.replace(/[^0-9.]/g,''))"
+                  onchange="commit('proServRate',this.value.replace(/[^0-9.]/g,''))"
                   style="color:${safeProServRate > 0 ? 'var(--ink)' : 'var(--pencil)'};width:80px" />
               </div>
             </div>
@@ -431,6 +446,12 @@
       render();
     }
 
+    // Called onchange (blur/enter) — re-renders without killing keyboard mid-type
+    function commit(key, val) {
+      state[key] = val;
+      render();
+    }
+
     function nudge(key, delta) {
       const min = key === 'existing' ? 0 : 1;
       const cur = parseInt(state[key]) || 0;
@@ -450,7 +471,19 @@
     }
 
     // ── INIT ──────────────────────────────────────────────────────────────────
-    render();
+    // Wait for DOM to be fully ready (critical for iOS home screen)
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', render);
+    } else {
+      render();
+    }
+
+    // Register service worker for offline / home screen support
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
   </script>
 </body>
 </html>
