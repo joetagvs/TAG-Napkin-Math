@@ -192,15 +192,15 @@
   <script>
     // ── DATA ──────────────────────────────────────────────────────────────────
     const TIERS = [
-      { from: 1,     to: 40,       unitPrice: 873,  discount: 0.0  },
-      { from: 41,    to: 100,      unitPrice: 728,  discount: 16.7 },
-      { from: 101,   to: 150,      unitPrice: 582,  discount: 33.3 },
-      { from: 151,   to: 200,      unitPrice: 509,  discount: 41.7 },
-      { from: 201,   to: 300,      unitPrice: 437,  discount: 50.0 },
-      { from: 301,   to: 400,      unitPrice: 364,  discount: 58.3 },
-      { from: 401,   to: 500,      unitPrice: 340,  discount: 61.1 },
-      { from: 501,   to: 15000,    unitPrice: 291,  discount: 66.7 },
-      { from: 15001, to: Infinity, unitPrice: 262,  discount: 70.0 },
+      { from: 1,     to: 40,       unitPrice: 873.18,  discount: 0.0  },
+      { from: 41,    to: 100,      unitPrice: 727.65,  discount: 16.7 },
+      { from: 101,   to: 150,      unitPrice: 582.12,  discount: 33.3 },
+      { from: 151,   to: 200,      unitPrice: 509.36,  discount: 41.7 },
+      { from: 201,   to: 300,      unitPrice: 436.59,  discount: 50.0 },
+      { from: 301,   to: 400,      unitPrice: 363.83,  discount: 58.3 },
+      { from: 401,   to: 500,      unitPrice: 339.57,  discount: 61.1 },
+      { from: 501,   to: 15000,    unitPrice: 291.06,  discount: 66.7 },
+      { from: 15001, to: Infinity, unitPrice: 261.95,  discount: 70.0 },
     ];
 
     // ── STATE ─────────────────────────────────────────────────────────────────
@@ -215,7 +215,7 @@
     };
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
-    function fmtD(n)   { return '$' + Math.round(n).toLocaleString(); }
+    function fmtD(n)   { return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
     function fmtDec(n) { return '$' + n.toFixed(2); }
     function fmtN(n)   { return n === Infinity ? '∞' : n.toLocaleString(); }
 
@@ -238,7 +238,7 @@
         total += subtotal;
         breakdown.push({ tier: i, from: bandStart, to: bandEnd, count, unitPrice: t.unitPrice, subtotal });
       }
-      return { total, breakdown, effRate: newQty > 0 ? total / newQty : 0, savings: newQty * 873 - total, overridden: false };
+      return { total, breakdown, effRate: newQty > 0 ? total / newQty : 0, savings: newQty * 873.18 - total, overridden: false };
     }
 
     function activeTierIdx(qty) {
